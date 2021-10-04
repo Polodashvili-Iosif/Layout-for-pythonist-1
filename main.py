@@ -1,21 +1,36 @@
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+import argparse
 import datetime
-
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from collections import defaultdict
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
 import pandas
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-wines_info_dic = pandas.read_excel('wine.xlsx',
-                                   sheet_name='Лист1',
-                                   na_values=None,
-                                   keep_default_na=False).to_dict(orient='records')
+parser = argparse.ArgumentParser(
+    description='Программа принимает на вход xlsx файл и берёт '
+                'из него информацию о винах. '
+                'В соответствии с информацией из файла '
+                'программа создаёт html файл сайта '
+                'магазина авторского вина "Новое русское вино".'
+)
+parser.add_argument('--file_path',
+                    help='путь к xlsx файлу с информацией о винах'
+                    )
+args = parser.parse_args()
+if args.file_path is None:
+    file_path_xlsx = 'wine.xlsx'
+else:
+    file_path_xlsx = args.file_path
 
-wines_info = defaultdict(list)
+wines_raw = pandas.read_excel(file_path_xlsx,
+                              sheet_name='Лист1',
+                              na_values=None,
+                              keep_default_na=False).to_dict(orient='records')
 
-for i in range(len(wines_info_dic)):
-    wines_info[wines_info_dic[i]['Категория']].append(wines_info_dic[i])
+wines = defaultdict(list)
 
-categories = sorted(dict(wines_info))
+for wine in wines_raw:
+    wines[wine['Категория']].append(wine)
 
 env = Environment(
     loader=FileSystemLoader('.'),
@@ -24,15 +39,12 @@ env = Environment(
 
 template = env.get_template('template.html')
 
-winery_foundation_date = datetime.date(1920, 1, 1)
-winery_age_var = int((datetime.date.today() - winery_foundation_date)
-                     / datetime.timedelta(days=365)
-                     )
+winery_foundation_year = 1920
+winery_age = datetime.date.today().year - winery_foundation_year
 
 rendered_page = template.render(
-    winery_age=winery_age_var,
-    wines_info=wines_info,
-    categories=categories
+    winery_age=winery_age,
+    wines=wines,
 )
 
 with open('index.html', 'w', encoding="utf8") as file:
