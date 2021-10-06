@@ -17,16 +17,15 @@ parser.add_argument('--file_path_xlsx',
                     help='путь к xlsx файлу с информацией о винах',
                     default='wine.xlsx'
                     )
+wines = pandas.read_excel(parser.parse_args().file_path_xlsx,
+                          sheet_name='Лист1',
+                          na_values=None,
+                          keep_default_na=False).to_dict(orient='records')
 
-wines_raw = pandas.read_excel(parser.parse_args().file_path_xlsx,
-                              sheet_name='Лист1',
-                              na_values=None,
-                              keep_default_na=False).to_dict(orient='records')
+grouped_wines = defaultdict(list)
 
-wines = defaultdict(list)
-
-for wine in wines_raw:
-    wines[wine['Категория']].append(wine)
+for wine in wines:
+    grouped_wines[wine['Категория']].append(wine)
 
 env = Environment(
     loader=FileSystemLoader('.'),
@@ -40,7 +39,7 @@ winery_age = datetime.date.today().year - winery_foundation_year
 
 rendered_page = template.render(
     winery_age=winery_age,
-    wines=wines,
+    wines=grouped_wines,
 )
 
 with open('index.html', 'w', encoding="utf8") as file:
