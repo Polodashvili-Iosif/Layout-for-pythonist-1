@@ -13,16 +13,12 @@ parser = argparse.ArgumentParser(
                 'программа создаёт html файл сайта '
                 'магазина авторского вина "Новое русское вино".'
 )
-parser.add_argument('--file_path',
-                    help='путь к xlsx файлу с информацией о винах'
+parser.add_argument('--file_path_xlsx',
+                    help='путь к xlsx файлу с информацией о винах',
+                    default='wine.xlsx'
                     )
-args = parser.parse_args()
-if args.file_path is None:
-    file_path_xlsx = 'wine.xlsx'
-else:
-    file_path_xlsx = args.file_path
 
-wines_raw = pandas.read_excel(file_path_xlsx,
+wines_raw = pandas.read_excel(parser.parse_args().file_path_xlsx,
                               sheet_name='Лист1',
                               na_values=None,
                               keep_default_na=False).to_dict(orient='records')
